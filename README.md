@@ -1,3 +1,3 @@
 # lab-music
 
-SlackのLegacy token[https://api.slack.com/custom-integrations/legacy-tokens]を./tokenフォルダを作って入れてください。
+Slackの[Legacy token](https://api.slack.com/custom-integrations/legacy-tokens)を、tokenファイルを作って入れてください。
