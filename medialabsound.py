@@ -10,8 +10,8 @@ if not os.path.exists("music"):
 	os.mkdir("music")
 
 channelID = "C7H8KHS69"
-#test channelID = "C7HQXCU21"
-token = open('token','r').read().rstrip('\n').rstrip('\r\n')
+#test channel : channelID = "C7HQXCU21"
+token = open('token','r').read().rstrip('\n').rstrip('\r')
 
 mplayer = []
 
@@ -28,7 +28,7 @@ def playMusic(music_data):
 	pipes = dict(stdin=PIPE, stdout=PIPE, stderr=PIPE)
 	mplayer = Popen(["mplayer", path], **pipes)
 
-def getSlackData():
+def recieveSlackData():
 	par = urllib.parse.urlencode({
 		'token':token,
 		'channel':channelID,
@@ -80,36 +80,49 @@ mplayer_terminated = False
 while True:
 	print("loop")
 	# Check Slack
-	data = getSlackData()
+	data = recieveSlackData()
 	if checkUpdate(data):
+
+		# 曲をストックに追加
 		if isMusicData(data):
 			music_data_list.append(getMusicData(data))
 			sendMessage("再生リスト")
 			for cnt, music_data in enumerate(music_data_list):
 				sendMessage(str(cnt+1)+": "+music_data[0].split('.')[0])
+
 		text = data["messages"][0]["text"]
+
+		# 音量を上げる
 		if text == 'up' and onryo != 100:
 			onryo = onryo + 5
 			os.system('amixer cset numid=1 '+str(onryo)+'%')
 			sendMessage("Set "+str(onryo)+"%")
+
+		# 音量を下げる
 		if text == 'down' and onryo != 85:
 			onryo = onryo - 5
 			os.system('amixer cset numid=1 '+str(onryo)+'%')
 			sendMessage("Set "+str(onryo) + "%")
+
+		# スキップ
 		if mplayer and text == 'skip':
 			mplayer.terminate()
 			mplayer_terminated = True
+
+		# 停止
 		if mplayer and text == 'stop':
 			music_data_list = []
 			mplayer.terminate()
 			mplayer_terminated = True
+
+		# スリープ
 		if mplayer and text.split(' ')[0] == 'urusai':
 			mplayer.terminate()
 			print(float(text.split(' ')[1]) * 60)
 			time.sleep(float(text.split(' ')[1]) * 60)
 			mplayer_terminated = True
 
-	# Play music
+	# 曲が流れていなければ、ストックから曲を取り出して再生
 	if (isMusicStop() or mplayer_terminated) and music_data_list:
 		mplayer_terminated = False
 		music_data = music_data_list.pop(0)
