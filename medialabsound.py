@@ -28,6 +28,12 @@ def playMusic(music_data):
 	pipes = dict(stdin=PIPE, stdout=PIPE, stderr=PIPE)
 	mplayer = Popen(["mplayer", path], **pipes)
 
+def playLocalMusic(music_path):
+	path = "music/" + music_path
+	global mplayer
+	pipes = dict(stdin=PIPE, stdout=PIPE, stderr=PIPE)
+	mplayer = Popen(["mplayer", path], **pipes)
+
 def recieveSlackData():
 	par = urllib.parse.urlencode({
 		'token':token,
@@ -78,9 +84,12 @@ onryo = 100
 mplayer_terminated = False
 
 while True:
-	print("loop")
+	# print("loop")
 	# Check Slack
-	data = recieveSlackData()
+	try:
+		data = recieveSlackData()
+	except:
+		print('cant get data!')
 	if checkUpdate(data):
 
 		# 曲をストックに追加
@@ -122,12 +131,32 @@ while True:
 			time.sleep(float(text.split(' ')[1]) * 60)
 			mplayer_terminated = True
 
+		# show list
+		if text == 'list':
+			musics = os.listdir('./music')
+			musics = [ s.replace('.m4a','') for s in musics]
+			s = '\n'.join(musics)
+			sendMessage(s)
+
+		# Kyokumei kara add
+		if text.split(' ')[0] == 'refrain':
+			music = text.split(' ')[1] + '.m4a'
+			music_data_list.append(['refrain',music])
+			sendMessage("再生リスト")
+			for cnt, music_data in enumerate(music_data_list):
+				sendMessage(str(cnt+1)+": "+music_data[1].split('.')[0])			
+
 	# 曲が流れていなければ、ストックから曲を取り出して再生
 	if (isMusicStop() or mplayer_terminated) and music_data_list:
 		mplayer_terminated = False
 		music_data = music_data_list.pop(0)
-		sendMessage("Now playing: "+music_data[0].split('.')[0])
-		playMusic(music_data)
+		if music_data[0] == 'refrain':
+			# play local
+			sendMessage("Now playing: "+music_data[1].split('.')[0])
+			playLocalMusic(music_data[1])
+		else:
+			sendMessage("Now playing: "+music_data[0].split('.')[0])
+			playMusic(music_data)
 
 	# Wait 1 sec
 	time.sleep(1)
