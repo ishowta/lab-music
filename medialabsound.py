@@ -140,11 +140,14 @@ while True:
 
 		# Kyokumei kara add
 		if text.split(' ')[0] == 'refrain':
-			music = text.split(' ')[1] + '.m4a'
-			music_data_list.append(['refrain',music])
-			sendMessage("再生リスト")
-			for cnt, music_data in enumerate(music_data_list):
-				sendMessage(str(cnt+1)+": "+music_data[1].split('.')[0])			
+			music = text.replace('refrain ','') + '.m4a'
+			if not os.path.exists('music/'+music):
+				sendMessage("曲がない")
+			else:
+				music_data_list.append(['refrain',music])
+				sendMessage("再生リスト")
+				for cnt, music_data in enumerate(music_data_list):
+					sendMessage(str(cnt+1)+": "+music_data[1].split('.')[0])			
 
 	# 曲が流れていなければ、ストックから曲を取り出して再生
 	if (isMusicStop() or mplayer_terminated) and music_data_list:
